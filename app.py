@@ -68,29 +68,30 @@ def get_menu():
 
             image_data = response.content
 
-            response = model.start_chat(history=[]).send_message([{
-                "text": "Analyze the following image and extract all text from it in JSON format. "
-                        "Use keys: 'Day', 'Breakfast', 'Lunch', 'Dinner'. If details are missing, use 'N/A'."
-            },
-            {
-                "mime_type": "image/jpeg",
-                "data": image_data
-            }])
+            print("Sending image to Gemini model for analysis...")
+            response = model.start_chat(history=[]).send_message([
+                {"text": "Analyze the following image and extract all text from it in JSON format. "
+                         "Use keys: 'Day', 'Breakfast', 'Lunch', 'Dinner'. If details are missing, use 'N/A'."},
+                {"mime_type": "image/jpeg", "data": image_data}
+            ])
 
+            print("Raw response from Gemini:", response)
+            
             response_text = response.text.strip('`json').strip('`')
-
-            print("Raw AI response:", response_text)
 
             try:
                 parsed_response = json.loads(response_text)
             except json.JSONDecodeError as e:
+                print("Failed to parse AI response:", response_text)
                 raise ValueError(f"AI response is not a valid JSON object: {str(e)}")
 
-            print("Parsed AI response:", parsed_response)
+            if not parsed_response:
+                raise ValueError("AI response is empty or not in expected format.")
 
             if not isinstance(parsed_response, dict):
                 raise ValueError("Parsed response is not a dictionary.")
 
+            print("Parsed AI response:", parsed_response)
             save_meal_data(parsed_response)
             meal_data = parsed_response
 
